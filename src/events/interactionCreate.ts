@@ -5,9 +5,33 @@ import { Logger } from '../core/logger.js';
 export const name = Events.InteractionCreate;
 
 export async function execute(interaction: Interaction) {
+  const client = interaction.client as BotClient;
+
+  // Manejar autocomplete
+  if (interaction.isAutocomplete()) {
+    const command = client.commands.get(interaction.commandName);
+
+    if (!command) {
+      Logger.warn(`Comando no encontrado para autocomplete: ${interaction.commandName}`);
+      return;
+    }
+
+    if (!command.autocomplete) {
+      Logger.warn(`Comando ${interaction.commandName} no tiene función autocomplete`);
+      return;
+    }
+
+    try {
+      await command.autocomplete(interaction);
+    } catch (error) {
+      Logger.error(`Error en autocomplete ${interaction.commandName}`, error as Error);
+    }
+    return;
+  }
+
+  // Manejar comandos normales
   if (!interaction.isChatInputCommand()) return;
 
-  const client = interaction.client as BotClient;
   const command = client.commands.get(interaction.commandName);
 
   if (!command) {

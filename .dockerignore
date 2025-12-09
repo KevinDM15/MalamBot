@@ -1,0 +1,39 @@
+# Ignorar archivos innecesarios en la imagen Docker
+node_modules/
+dist/
+npm-debug.log
+.env
+.env.*
+.git/
+.github/
+.gitignore
+*.md
+!README.md
+*.log
+.DS_Store
+.vscode/
+.idea/
+coverage/
+.nyc_output/
+*.test.ts
+*.spec.ts
+test/
+tests/
+
+# Archivos temporales de música
+*.mp3
+*.mp4
+*.webm
+cache/
+
+# Archivos específicos de desarrollo
+tsconfig.json
+.eslintrc.json
+.prettierrc
+yarn.lock
+package-lock.json
+
+# Scripts temporales
+*-player-script.js
+test-*.js
+test-*.cjs

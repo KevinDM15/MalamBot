@@ -83,7 +83,10 @@ MalamBot/
 ## 🎮 Comandos Disponibles
 
 - `/ping` - Verifica la latencia del bot
-- `/play [cancion]` - Reproduce música (placeholder)
+- `/play [cancion]` - Reproduce música de SoundCloud, Spotify, YouTube y más
+- `/skip` - Salta la canción actual
+- `/stop` - Detiene la reproducción
+- `/queue` - Muestra la cola de reproducción
 - `/rank [playerid]` - Obtiene el rango de Rocket League
 
 ## 🌐 API del Microservicio
@@ -108,10 +111,22 @@ MalamBot/
 
 Copia `.env.example` a `.env` y configura:
 
+**Requeridas:**
+
 - `DISCORD_TOKEN` - Token del bot de Discord
 - `CLIENT_ID` - ID de la aplicación de Discord
 - `GUILD_ID` - ID del servidor (opcional, para comandos de desarrollo)
 - `MICROSERVICE_URL` - URL del microservicio (por defecto: http://localhost:8080)
+
+**Opcionales (Spotify OAuth):**
+
+- `OAUTH_ENABLED` - Habilitar servidor OAuth (true/false)
+- `OAUTH_PORT` - Puerto del servidor OAuth (por defecto: 3000)
+- `SPOTIFY_CLIENT_ID` - Client ID de Spotify Developer
+- `SPOTIFY_CLIENT_SECRET` - Client Secret de Spotify
+- `SPOTIFY_REDIRECT_URI` - URI de callback (por defecto: http://localhost:3000/callback/spotify)
+
+Ver [SPOTIFY_OAUTH_SETUP.md](SPOTIFY_OAUTH_SETUP.md) para configuración detallada de Spotify.
 
 ## 📝 Scripts Disponibles
 
@@ -133,17 +148,58 @@ yarn format   # Formatea el código con Prettier
 ## 🚧 Estado Actual
 
 **Implementado:**
+
 - ✅ Estructura base del proyecto
 - ✅ Sistema de comandos slash
 - ✅ Logger personalizado
 - ✅ Microservicio REST en Go
 - ✅ Comunicación TypeScript ↔ Go
+- ✅ Sistema de reproducción de música multi-plataforma
+- ✅ Servidor OAuth para Spotify
+- ✅ Extractores: SoundCloud, Spotify, Vimeo, YouTube
 
 **Por implementar:**
+
 - ⏳ Integración real con API de Rocket League
-- ⏳ Sistema de reproducción de música
 - ⏳ Tests unitarios
 - ⏳ CI/CD
+
+## 🎵 Configuración de Música
+
+El bot soporta múltiples plataformas de música:
+
+1. **SoundCloud** (recomendado - sin bloqueos)
+2. **Spotify** (requiere OAuth - mejor búsqueda)
+3. **Vimeo**
+4. **YouTube** (puede fallar por bloqueos)
+
+### Configurar Spotify (Opcional pero Recomendado)
+
+Para mejor calidad de búsqueda:
+
+1. Ve a `http://localhost:3000` cuando el bot esté ejecutándose
+2. Sigue las instrucciones en pantalla
+3. Autoriza con tu cuenta de Spotify
+
+Ver guía completa: [SPOTIFY_OAUTH_SETUP.md](SPOTIFY_OAUTH_SETUP.md)
+
+### Uso de Música
+
+```
+# Buscar por nombre (prueba en todas las plataformas)
+/play Imagine Dragons - Believer
+
+# SoundCloud (recomendado)
+/play https://soundcloud.com/artist/track
+
+# Spotify
+/play https://open.spotify.com/track/...
+
+# YouTube (puede fallar)
+/play https://youtube.com/watch?v=...
+```
+
+Ver documentación completa: [MUSIC_SOURCES.md](MUSIC_SOURCES.md)
 
 ## 📄 Licencia
 
