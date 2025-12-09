@@ -29,6 +29,7 @@ type MusicTextChannel = TextChannel | NewsChannel;
  */
 export class AudioManager {
   private queues: Map<string, ServerQueue> = new Map();
+  private readonly INACTIVITY_TIMEOUT = 60_000; // 1 minuto en milisegundos
 
   /**
    * Añade una canción a la cola y empieza a reproducir si es la primera
@@ -68,12 +69,18 @@ export class AudioManager {
       // Configurar eventos del reproductor
       this.setupPlayerEvents(queue, guildId);
 
+      // Iniciar timer de inactividad
+      this.resetInactivityTimer(queue, guildId);
+
       // Empezar a reproducir
       await this.playSong(queue);
     } else {
       // Añadir a cola existente
       queue.songs.push(song);
       Logger.info(`[AudioManager] Canción añadida a la cola: ${song.title}`);
+
+      // Resetear timer de inactividad
+      this.resetInactivityTimer(queue, voiceChannel.guild.id);
 
       // Crear embed para canción añadida a la cola
       const queueEmbed = new EmbedBuilder()
@@ -141,12 +148,18 @@ export class AudioManager {
       // Configurar eventos del reproductor
       this.setupPlayerEvents(queue, guildId);
 
+      // Iniciar timer de inactividad
+      this.resetInactivityTimer(queue, guildId);
+
       // Empezar a reproducir
       await this.playSong(queue);
     } else {
       // Añadir todas las canciones a la cola existente
       queue.songs.push(...songs);
       Logger.info(`[AudioManager] ${songs.length} canciones añadidas a la cola`);
+
+      // Resetear timer de inactividad
+      this.resetInactivityTimer(queue, voiceChannel.guild.id);
 
       // Crear embed para playlist añadida
       const playlistEmbed = new EmbedBuilder()
@@ -206,23 +219,19 @@ export class AudioManager {
       const endEmbed = new EmbedBuilder()
         .setColor(0xff6b6b)
         .setTitle('👋 Cola terminada')
-        .setDescription('No hay más canciones en la cola. ¡Hasta luego!')
+        .setDescription(
+          'No hay más canciones en la cola. Me desconectaré en 1 minuto si no añades más.'
+        )
         .setTimestamp();
 
       queue.textChannel.send({ embeds: [endEmbed] });
 
-      // Destruir conexión de forma segura
-      try {
-        if (queue.voiceConnection.state.status !== VoiceConnectionStatus.Destroyed) {
-          queue.voiceConnection.destroy();
-        }
-      } catch (error) {
-        Logger.warn('[AudioManager] Error al destruir conexión (ya estaba destruida)');
-      }
-
-      this.queues.delete(queue.textChannel.guild.id);
+      // El timer de inactividad ya se inició en el evento Idle
       return;
     }
+
+    // Si hay una canción, cancelar el timer de inactividad
+    this.clearInactivityTimer(queue);
 
     try {
       Logger.info(`[AudioManager] Reproduciendo: ${song.title}`);
@@ -365,6 +374,12 @@ export class AudioManager {
         queue.songs.shift();
       }
 
+      // Si no hay más canciones, iniciar timer de inactividad
+      if (queue.songs.length === 0) {
+        Logger.info('[AudioManager] No hay más canciones, iniciando timer de inactividad');
+        this.resetInactivityTimer(queue, guildId);
+      }
+
       await this.playSong(queue);
     });
 
@@ -400,6 +415,7 @@ export class AudioManager {
       } catch (error) {
         Logger.warn('[AudioManager] Desconectado, limpiando cola');
         this.cleanupCurrentProcess(queue);
+        this.clearInactivityTimer(queue);
         try {
           if (queue.voiceConnection.state.status !== VoiceConnectionStatus.Destroyed) {
             queue.voiceConnection.destroy();
@@ -441,6 +457,9 @@ export class AudioManager {
     // Limpiar el proceso actual
     this.cleanupCurrentProcess(queue);
 
+    // Limpiar timer de inactividad
+    this.clearInactivityTimer(queue);
+
     queue.songs = [];
     queue.audioPlayer.stop();
 
@@ -479,6 +498,41 @@ export class AudioManager {
   }
 
   /**
+   * Resetea el timer de inactividad
+   */
+  private resetInactivityTimer(queue: ServerQueue, guildId: string): void {
+    // Limpiar timer anterior si existe
+    if (queue.inactivityTimer) {
+      clearTimeout(queue.inactivityTimer);
+    }
+
+    // Crear nuevo timer
+    queue.inactivityTimer = setTimeout(() => {
+      Logger.info(`[AudioManager] Inactividad detectada en ${guildId}, desconectando...`);
+
+      const inactivityEmbed = new EmbedBuilder()
+        .setColor(0xffa500)
+        .setTitle('⏱️ Desconectado por inactividad')
+        .setDescription('Me he desconectado después de 1 minuto de inactividad.')
+        .setTimestamp();
+
+      queue.textChannel.send({ embeds: [inactivityEmbed] });
+
+      this.stop(guildId);
+    }, this.INACTIVITY_TIMEOUT);
+  }
+
+  /**
+   * Limpia el timer de inactividad
+   */
+  private clearInactivityTimer(queue: ServerQueue): void {
+    if (queue.inactivityTimer) {
+      clearTimeout(queue.inactivityTimer);
+      queue.inactivityTimer = undefined;
+    }
+  }
+
+  /**
    * Obtiene la cola de un servidor
    */
   getQueue(guildId: string): ServerQueue | undefined {
@@ -496,6 +550,10 @@ export class AudioManager {
 
     queue.audioPlayer.pause();
     queue.playing = false;
+
+    // Iniciar timer de inactividad cuando se pausa
+    this.resetInactivityTimer(queue, guildId);
+
     return true;
   }
 
@@ -510,6 +568,10 @@ export class AudioManager {
 
     queue.audioPlayer.unpause();
     queue.playing = true;
+
+    // Cancelar timer de inactividad cuando se reanuda
+    this.clearInactivityTimer(queue);
+
     return true;
   }
 

@@ -25,6 +25,7 @@ export interface ServerQueue {
   loop: LoopMode;
   currentSongStartTime?: number; // Timestamp when current song started
   currentProcess?: ChildProcess; // Current youtube-dl process
+  inactivityTimer?: NodeJS.Timeout; // Timer for auto-disconnect
 }
 
 export interface QueueManager {
