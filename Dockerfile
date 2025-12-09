@@ -24,15 +24,15 @@ RUN apk add --no-cache python3 make g++
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (usar legacy-peer-deps para resolver conflictos)
+RUN npm ci --only=production --legacy-peer-deps
 
 # Copy TypeScript source
 COPY tsconfig.json ./
 COPY src/ ./src/
 
 # Install TypeScript for building
-RUN npm install -D typescript
+RUN npm install -D typescript --legacy-peer-deps
 
 # Build TypeScript
 RUN npm run build

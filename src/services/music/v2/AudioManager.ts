@@ -251,8 +251,8 @@ export class AudioManager {
         addHeader: ['referer:youtube.com', 'user-agent:googlebot'],
         rmCacheDir: true,
         // Opciones de buffering moderadas
-        socketTimeout: '30',
-        retries: '3',
+        socketTimeout: 30,
+        retries: 3,
       });
 
       if (!process.stdout) {

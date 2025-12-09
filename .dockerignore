@@ -26,12 +26,18 @@ tests/
 *.webm
 cache/
 
-# Archivos específicos de desarrollo
-tsconfig.json
+# Archivos específicos de desarrollo (NO incluir tsconfig.json, lo necesitamos para build)
 .eslintrc.json
 .prettierrc
 yarn.lock
-package-lock.json
+
+# Archivos de música antiguos (no usados - sistema legacy)
+src/services/music/MusicEventHandler.ts
+src/services/music/MusicPlayer.ts
+src/services/music/MusicSearchService.ts
+src/services/music/types.ts
+src/services/music/index.ts
+src/services/musicService.ts
 
 # Scripts temporales
 *-player-script.js
