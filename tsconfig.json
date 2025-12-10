@@ -14,5 +14,14 @@
     "allowSyntheticDefaultImports": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/services/music/MusicEventHandler.ts",
+    "src/services/music/MusicPlayer.ts",
+    "src/services/music/MusicSearchService.ts",
+    "src/services/music/types.ts",
+    "src/services/music/index.ts",
+    "src/services/musicService.ts"
+  ]
 }

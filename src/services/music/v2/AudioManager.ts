@@ -241,18 +241,30 @@ export class AudioManager {
       // Usar youtube-dl-exec para crear un stream de audio directamente
       Logger.info(`[AudioManager] Creando stream con youtube-dl-exec...`);
 
-      // youtube-dl-exec con configuración optimizada para streaming
+      // youtube-dl-exec con configuración optimizada para streaming y evitar bloqueos
       const process = youtubedl.exec(song.url, {
         output: '-', // Output to stdout
         format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=m4a]/bestaudio', // Preferir opus nativo
         noCheckCertificates: true,
         noWarnings: true,
         preferFreeFormats: true,
-        addHeader: ['referer:youtube.com', 'user-agent:googlebot'],
+        // Headers para evitar detección como bot
+        addHeader: [
+          'referer:https://www.youtube.com/',
+          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'accept-language:en-US,en;q=0.9',
+          'accept:text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        ],
         rmCacheDir: true,
         // Opciones de buffering moderadas
         socketTimeout: 30,
         retries: 3,
+        // Opciones adicionales para evitar bloqueos
+        geoBypass: true,
+        markWatched: false,
+        noPart: true,
+        noMtime: true,
+        noPlaylist: true,
       });
 
       if (!process.stdout) {
