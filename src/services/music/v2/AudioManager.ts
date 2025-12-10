@@ -59,7 +59,7 @@ export class AudioManager {
         voiceConnection: connection,
         audioPlayer,
         songs: [song],
-        volume: 50,
+        volume: 100,
         playing: true,
         loop: 'off',
       };
@@ -69,20 +69,27 @@ export class AudioManager {
       // Configurar eventos del reproductor
       this.setupPlayerEvents(queue, guildId);
 
-      // Iniciar timer de inactividad
-      this.resetInactivityTimer(queue, guildId);
+      // NO iniciar timer aquí, la música va a empezar de inmediato
 
       // Empezar a reproducir
       await this.playSong(queue);
     } else {
       // Añadir a cola existente
+      const wasIdle = queue.audioPlayer.state.status === AudioPlayerStatus.Idle;
       queue.songs.push(song);
       Logger.info(`[AudioManager] Canción añadida a la cola: ${song.title}`);
 
-      // Resetear timer de inactividad
-      this.resetInactivityTimer(queue, voiceChannel.guild.id);
+      // Resetear timer de inactividad (cancelar si estaba corriendo)
+      this.clearInactivityTimer(queue);
 
-      // Crear embed para canción añadida a la cola
+      // Si el reproductor estaba inactivo (cola vacía), empezar a reproducir
+      if (wasIdle && queue.songs.length === 1) {
+        Logger.info('[AudioManager] Reproductor estaba inactivo, iniciando reproducción');
+        await this.playSong(queue);
+        return; // No mostrar "añadido a la cola", playSong() mostrará "reproduciendo ahora"
+      }
+
+      // Crear embed para canción añadida a la cola (solo si ya estaba reproduciendo)
       const queueEmbed = new EmbedBuilder()
         .setColor(0x00d9ff)
         .setTitle('✅ Añadido a la cola')
@@ -138,7 +145,7 @@ export class AudioManager {
         voiceConnection: connection,
         audioPlayer,
         songs: [...songs],
-        volume: 50,
+        volume: 100,
         playing: true,
         loop: 'off',
       };
@@ -148,20 +155,29 @@ export class AudioManager {
       // Configurar eventos del reproductor
       this.setupPlayerEvents(queue, guildId);
 
-      // Iniciar timer de inactividad
-      this.resetInactivityTimer(queue, guildId);
+      // NO iniciar timer aquí, la música va a empezar de inmediato
 
       // Empezar a reproducir
       await this.playSong(queue);
     } else {
       // Añadir todas las canciones a la cola existente
+      const wasIdle = queue.audioPlayer.state.status === AudioPlayerStatus.Idle;
       queue.songs.push(...songs);
       Logger.info(`[AudioManager] ${songs.length} canciones añadidas a la cola`);
 
-      // Resetear timer de inactividad
-      this.resetInactivityTimer(queue, voiceChannel.guild.id);
+      // Cancelar timer de inactividad si estaba corriendo
+      this.clearInactivityTimer(queue);
 
-      // Crear embed para playlist añadida
+      // Si el reproductor estaba inactivo (cola vacía), empezar a reproducir
+      if (wasIdle && queue.songs.length === songs.length) {
+        Logger.info(
+          '[AudioManager] Reproductor estaba inactivo, iniciando reproducción de playlist'
+        );
+        await this.playSong(queue);
+        return; // playSong() mostrará el "reproduciendo ahora" para la primera canción
+      }
+
+      // Crear embed para playlist añadida (solo si ya estaba reproduciendo)
       const playlistEmbed = new EmbedBuilder()
         .setColor(0x00d9ff)
         .setTitle('✅ Playlist añadida a la cola')
@@ -397,6 +413,8 @@ export class AudioManager {
 
     queue.audioPlayer.on(AudioPlayerStatus.Playing, () => {
       Logger.info('[AudioManager] Estado del reproductor: Playing');
+      // Cancelar timer de inactividad cuando está reproduciendo
+      this.clearInactivityTimer(queue);
     });
 
     queue.audioPlayer.on(AudioPlayerStatus.Paused, () => {
