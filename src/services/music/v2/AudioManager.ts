@@ -264,6 +264,8 @@ export class AudioManager {
         noCheckCertificates: true,
         noWarnings: true,
         preferFreeFormats: true,
+        // Usar cookies exportadas de Chrome para evitar detección de bot
+        cookies: 'youtube_cookies.txt',
         // Headers para evitar detección como bot
         addHeader: [
           'referer:https://www.youtube.com/',
